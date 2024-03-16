@@ -56,3 +56,69 @@ Kode tambahan tersebut bertanggung jawab untuk mengirimkan HTTP response ke clie
 - `stream.write_all(response.as_bytes()).unwrap();` mengirimkan HTTP response yang telah disusun ke client. Method `write_all` dari TcpStream digunakan untuk menulis semua byte dari string response ke dalam stream.Response dikonversi ke array byte dengan `as_bytes()`. Penggunaan `unwrap()` di sini menandakan bahwa program akan panic jika terjadi kesalahan saat menulis ke stream, seperti jika koneksi telah terputus.
 
 ![Commit 2 screen capture](/assets/images/commit2.png)
+
+### Commit 3 Reflection notes
+
+Menambahkan file baru `404.html` yang akan ditampilkan ketika pengguna mengakses path yang tidak dikenal atau tidak tersedia di server.
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Hello!</title>
+  </head>
+  <body>
+    <h1>Oops!</h1>
+    <p>Sorry, I don't know what you're asking for.</p>
+  </body>
+</html>
+```
+
+Terdapat perubahan pada function `handle_connection` sebagai berikut.
+```rust
+let buf_reader = BufReader::new(&mut stream);
+let request_line = buf_reader.lines().next().unwrap().unwrap();
+
+if request_line == "GET / HTTP/1.1" {
+    let status_line = "HTTP/1.1 200 OK";
+    let contents = fs::read_to_string("hello.html").unwrap();
+    let length = contents.len();
+
+    let response = format!(
+        "{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}"
+    );
+
+    stream.write_all(response.as_bytes()).unwrap();
+} else {
+    let status_line = "HTTP/1.1 404 NOT FOUND";
+    let contents = fs::read_to_string("404.html").unwrap();
+    let length = contents.len();
+
+    let response = format!(
+        "{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}"
+    );
+
+    stream.write_all(response.as_bytes()).unwrap();
+}
+```
+`let request_line = buf_reader.lines().next().unwrap().unwrap();` berfungsi untuk membaca baris pertama dari HTTP request, yang biasanya berisi informasi tentang method HTTP dan path yang diminta. Penggunaan method `next()` digunakan untuk mengambil item pertama dari iterator yang merupakan baris pertama dari request, `unwrap()` yang pertama digunakan untuk mengurai Result dari Option, `unwrap()` yang kedua digunakan untuk mendapatkan String dari Result. Penggunaan *if-else statement* untuk memeriksa apakah path yang diminta valid. Jika pengguna hanya memasukkan url `http://127.0.0.1:7878/` dan `request_line` sesuai dengan `"GET / HTTP/1.1"`, maka server akan merespons dengan web page dari `hello.html`. Jika tidak, server akan merespons dengan web page baru dari `404.html` yang berupa halaman error.
+
+Selanjutnya, kode tersebut di-*refactor* untuk mengurangi duplikasi dengan menggunakan pendekatan conditional untuk menentukan `status_line` dan `filename` dalam bentuk tuple berdasarkan `request_line`:
+```rust
+let (status_line, filename) = if request_line == "GET / HTTP/1.1" {
+    ("HTTP/1.1 200 OK", "hello.html")
+} else {
+    ("HTTP/1.1 404 NOT FOUND", "404.html")
+};
+
+let contents = fs::read_to_string(filename).unwrap();
+let length = contents.len();
+
+let response = format!(
+    "{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}"
+);
+
+stream.write_all(response.as_bytes()).unwrap();
+```
+
+![Commit 3 screen capture](/assets/images/commit3.png)
