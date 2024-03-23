@@ -1,3 +1,10 @@
+# **Rust Tutorial & Exercise**
+**Muhammad Hilal Darul Fauzan**<br/>
+**2206830542**<br/>
+**Pemrograman Lanjut C**<br/>
+
+## **Tutorial Modul 6: Concurrency**
+
 ### Commit 1 Reflection notes
 
 What is inside the handle connection?
@@ -38,7 +45,7 @@ let contents = fs::read_to_string("hello.html").unwrap();
 let length = contents.len();
 
 let response = format!(
-"{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}"
+    "{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}"
 );
 
 stream.write_all(response.as_bytes()).unwrap();
@@ -132,3 +139,6 @@ Dalam simulasi *slow request* ini, ketika pengguna membuka dua *browser windows*
 ### Commit 5 Reflection notes
 
 Untuk menciptakan sistem yang menggunakan *multithreading*, perlu dibangun sebuah *ThreadPool* agar dapat mengelola sejumlah besar request secara simultan. Dalam prosesnya, pembuatan *Worker* juga diperlukan agar setiap request dapat dikirimkan ke *job* yang sesuai untuk tiap request. Oleh karena itu, *sender* perlu dibuat pada *ThreadPool* dan *receiver* pada setiap *Worker*, sehingga ketika request dieksekusi pada *ThreadPool*, sinyal dapat dikirim melalui *sender* ke *receiver* yang telah di-*assign* pada *Worker* untuk memproses *job*nya. Setiap *Worker* memiliki satu *thread* yang terus menunggu data. Ketika data diterima, *thread* tersebut akan *lock receiver*-nya dan memproses data hingga selesai, kemudian melepas kembali *lock*nya untuk memberi kesempatan *Worker* lain mendapatkan informasi dari *receiver*. Implementasi ini memastikan bahwa penggunaan *thread* menjadi lebih efisien dan sistem dapat menangani beban kerja yang lebih besar dengan lebih baik.
+
+### Commit Bonus Reflection notes
+Pada commit ini, saya mengubah implementasi pembuatan *ThreadPool* dari method `new` menjadi method `build`. Saya tidak menggunakan `assert` tetapi menggunakan condition untuk memeriksa apakah jumlah *thread* lebih besar dari 0. Hal ini lebih baik karena `assert` bisa mengarah pada kesalahan yang tidak dapat pulih. Dengan menggunakan condition, kesalahan masih dapat dipulihkan dan lebih informatif. Perlu dicatat bahwa saat memanggil method `build`, saya perlu `unwrap` terlebih dahulu. Pada akhirnya, saya bisa melihat bahwa server dapat menangani beberapa permintaan secara bersamaan seperti implementasi sebelumnya.
